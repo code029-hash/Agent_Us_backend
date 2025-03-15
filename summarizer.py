@@ -1,21 +1,45 @@
+import newspaper
+from urllib.parse import urlparse
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+import string
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Download necessary NLTK components
+nltk.download('punkt')
+nltk.download('stopwords')
+
+def clean_text(text):
+    """Clean and preprocess input text."""
+    if not text or not isinstance(text, str):
+        return ""
+
+    words = text.split()
+    return ' '.join([word for word in words if len(word) < 100 and word.isalpha()])
+
 def summarize_text(text):
     """Generate a coherent summary in 50-60 words."""
     try:
         cleaned = clean_text(text)
         words = cleaned.split()
 
-        if len(words) < 50:
-            return cleaned
+        if len(words) < 60:
+            return cleaned  # Return short text as-is
 
         sentences = sent_tokenize(cleaned)
         if len(sentences) < 3:
-            return ' '.join(words[:60])
+            return ' '.join(words[:60])  # Fallback to first 60 words
 
+        # Extract important words
         stop_words = set(stopwords.words('english'))
         keywords = [word.lower() for word in words if word.lower() not in stop_words and len(word) > 2]
 
         word_freq = nltk.FreqDist(keywords)
-        max_freq = max(word_freq.values(), default=1)
+        max_freq = max(word_freq.values(), default=1)  # Prevent division by zero
 
         sentence_scores = {}
         for i, sent in enumerate(sentences):
@@ -55,4 +79,38 @@ def summarize_text(text):
 
     except Exception as e:
         logging.error(f"Summarization error: {str(e)}")
-        return ' '.join(cleaned.split()[:60])  
+        return ' '.join(cleaned.split()[:60])  # Final fallback
+
+def fetch_article(url):
+    """Fetch article content with error handling."""
+    try:
+        article = newspaper.Article(
+            url, language='en', fetch_images=False, request_timeout=10, memoize_articles=False
+        )
+
+        article.download()
+        article.parse()
+
+        return (
+            article.title or "Untitled Article",
+            ', '.join(article.authors) if article.authors else "Unknown Author",
+            article.publish_date.strftime("%Y-%m-%d") if article.publish_date else "Unknown Date",
+            urlparse(url).netloc.replace('www.', '').title(),
+            article.text or ""
+        )
+    except Exception as e:
+        logging.error(f"Article fetch error for {url}: {str(e)}")
+        return "Error", "Error", "Error", "Error", ""
+
+def summarize_article(url):
+    """Summarize an article given its URL."""
+    try:
+        title, authors, date, publisher, text = fetch_article(url)
+        if not text.strip():
+            return title, publisher, date, "No content available"
+
+        summary = summarize_text(text)
+        return title, publisher, date, summary
+    except Exception as e:
+        logging.error(f"Article processing failed: {str(e)}")
+        return "Error", "Error", "Error", "Summary unavailable"
