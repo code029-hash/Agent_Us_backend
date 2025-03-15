@@ -1,23 +1,19 @@
-from PIL import Image, ImageDraw, ImageFont
+#future advancement
+from diffusers import StableDiffusionPipeline
+import torch
 
-def create_meme(text, image_path="trump.jpg", output_path="meme.jpg"):
-    """Generates a meme with overlaid text."""
-    try:
-        img = Image.open(image_path)
-        draw = ImageDraw.Draw(img)
+# Load Stable Diffusion model (less restrictive)
+pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+pipe.to("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Load a font
-        font = ImageFont.truetype("arial.ttf", 40)
+# Disable NSFW filter (Optional, for advanced users)
+pipe.safety_checker = lambda images, **kwargs: (images, False)
 
-        # Calculate text position (centered)
-        img_width, img_height = img.size
-        text_width, text_height = draw.textsize(text, font=font)
-        position = ((img_width - text_width) // 2, img_height - text_height - 50)
+def generate_meme(text):
+    prompt = f"A humorous cartoon meme about: {text}, no nudity, no violence, safe for work"
+    image = pipe(prompt).images[0]
+    image.save("meme.png")
+    print("✅ Meme saved as meme.png")
 
-        # Add text to image
-        draw.text(position, text, fill="white", font=font, stroke_width=2, stroke_fill="black")
-
-        img.save(output_path)
-        return output_path
-    except Exception as e:
-        return str(e)
+# Example usage
+generate_meme("When AI takes over the world")
