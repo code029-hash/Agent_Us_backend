@@ -2,16 +2,11 @@ from flask import Flask, jsonify, request
 from summarizer import summarize_article
 from tone_changer import change_tone
 from flask_cors import CORS
-from dotenv import load_dotenv
-import os
 import requests
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Load environment variables
-load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -20,7 +15,8 @@ CORS(app)  # Allow CORS for all routes
 # Global cache for storing fetched news
 cached_news = []
 
-API_KEY = os.getenv("API_KEY")  # Fetch API key from .env file
+# Directly set the API key here (Not Recommended for Production)
+API_KEY = "ff6140b6401d478e9efba563553b4f8a"
 
 def fetch_news():
     """Fetch news articles from API"""
