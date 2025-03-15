@@ -12,8 +12,6 @@ logging.basicConfig(level=logging.INFO)
 # Download necessary NLTK components
 nltk.download('punkt')
 nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
 
 def clean_text(text):
     """Clean and preprocess input text."""
