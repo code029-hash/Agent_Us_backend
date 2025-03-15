@@ -1,6 +1,6 @@
 import random
 
-def change_tone(text):
+def change_tone(text,tone):
     inserts = [
         "amid growing political controversies,",
         "as media outlets speculate on his next move,",
