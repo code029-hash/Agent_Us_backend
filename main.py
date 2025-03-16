@@ -62,6 +62,7 @@ with app.app_context():
     load_news()
 
 @app.route("/news", methods=["GET"])
+@app.route("/news", methods=["GET"])
 def get_news():
     """Fetch summarized news with optional tone adjustment"""
     try:
@@ -70,19 +71,27 @@ def get_news():
         if not cached_news:
             load_news()
 
+        processed_news = []
+
         if tone == "neutral":
-            processed_news = cached_news  # Return cached summaries if neutral tone is requested
+            # Return neutral summary but rename the key to "summary"
+            for item in cached_news:
+                processed_news.append({
+                    "title": item["title"],
+                    "summary": item["neutral_summary"],  # Use neutral_summary but rename it to summary
+                    "url": item["url"],
+                    "publisher": item["publisher"],
+                    "publish_date": item["publish_date"]
+                })
         else:
-            # Get all summaries at once
+            # Modify summaries based on the requested tone
             summaries = [item["neutral_summary"] for item in cached_news]
             modified_summaries = change_tone(summaries, tone)
 
-            # Map modified summaries back to the articles
-            processed_news = []
             for idx, item in enumerate(cached_news):
                 processed_news.append({
                     "title": item["title"],
-                    "summary": modified_summaries[idx],
+                    "summary": modified_summaries[idx],  # Use the modified summary
                     "url": item["url"],
                     "publisher": item["publisher"],
                     "publish_date": item["publish_date"]
@@ -93,6 +102,7 @@ def get_news():
     except Exception as e:
         logging.error(f"Error fetching news: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 # Run the app
 if __name__ == "__main__":
