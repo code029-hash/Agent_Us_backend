@@ -1,25 +1,44 @@
-import random
+import google.generativeai as genai
+import logging
 
-def change_tone(text,tone):
-    inserts = [
-        "amid growing political controversies,",
-        "as media outlets speculate on his next move,",
-        "raising eyebrows among both critics and supporters,",
-        "fueling debates about his priorities,",
-        "while analysts question his long-term strategy,",
-        "as his approval ratings fluctuate,",
-        "in a move that left journalists scrambling for explanations,"
-    ]
+# Set up Gemini API key
+GEMINI_API_KEY = "AIzaSyBt1yAxMXHVekKZVl_Png28Wc_KO42jmZc"  # Replace with your actual API key
+genai.configure(api_key=GEMINI_API_KEY)
 
-    words = text.split()
-    if len(words) < 5:
-        return text  # If too short, return as is
+def change_tone(summaries, tone="comedy"):
+    """
+    Modify the tone of multiple summaries using the Gemini API.
 
-    num_insertions = random.choice([1, 2])  # Randomly decide to insert 1 or 2 phrases
+    :param summaries: A list of summaries.
+    :param tone: The desired tone ("comedy", "satirical", etc.).
+    :return: A list of modified summaries in the specified tone.
+    """
+    try:
+        if not summaries:
+            return []
 
-    for _ in range(num_insertions):
-        insert_position = random.randint(1, len(words) - 2)  # Pick a random spot
-        words.insert(insert_position, random.choice(inserts))
+        prompt = f"Rewrite the following news summaries in a {tone} tone while keeping them meaningful and coherent:\n\n"
 
-    return " ".join(words)
+        for idx, summary in enumerate(summaries):
+            prompt += f"{idx + 1}. {summary}\n\n"
 
+        # Sending a single API request
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+
+        if response.text:
+            # Splitting response into individual summaries
+            modified_summaries = response.text.strip().split("\n\n")
+
+            # Ensure response count matches input count
+            if len(modified_summaries) != len(summaries):
+                logging.warning("Mismatch in modified summaries count. Returning original summaries.")
+                return summaries  # Fallback to original summaries if API response is incomplete
+
+            return modified_summaries
+
+        return summaries  # Return original summaries if API fails
+
+    except Exception as e:
+        logging.error(f"Error in change_tone: {str(e)}")
+        return summaries  # Return original summaries on failure

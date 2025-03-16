@@ -15,7 +15,7 @@ CORS(app)  # Allow CORS for all routes
 # Global cache for storing fetched news
 cached_news = []
 
-# Directly set the API key here (Not Recommended for Production)
+# News API Key
 API_KEY = "ff6140b6401d478e9efba563553b4f8a"
 
 def fetch_news():
@@ -70,21 +70,23 @@ def get_news():
         if not cached_news:
             load_news()
 
-        processed_news = []
+        if tone == "neutral":
+            processed_news = cached_news  # Return cached summaries if neutral tone is requested
+        else:
+            # Get all summaries at once
+            summaries = [item["neutral_summary"] for item in cached_news]
+            modified_summaries = change_tone(summaries, tone)
 
-        for item in cached_news:
-            if tone == "neutral":
-                final_text = item["neutral_summary"]
-            else:
-                final_text = change_tone(item["neutral_summary"], tone)
-
-            processed_news.append({
-                "title": item["title"],
-                "summary": final_text,
-                "url": item["url"],
-                "publisher": item["publisher"],
-                "publish_date": item["publish_date"]
-            })
+            # Map modified summaries back to the articles
+            processed_news = []
+            for idx, item in enumerate(cached_news):
+                processed_news.append({
+                    "title": item["title"],
+                    "summary": modified_summaries[idx],
+                    "url": item["url"],
+                    "publisher": item["publisher"],
+                    "publish_date": item["publish_date"]
+                })
 
         return jsonify({"news": processed_news})
 
