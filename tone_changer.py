@@ -1,9 +1,14 @@
 import google.generativeai as genai
 import logging
+import re
 
 # Set up Gemini API key
 GEMINI_API_KEY = "AIzaSyBt1yAxMXHVekKZVl_Png28Wc_KO42jmZc"  # Replace with your actual API key
 genai.configure(api_key=GEMINI_API_KEY)
+
+def remove_leading_numbers(text):
+    """Remove leading numbers and optional punctuation/spaces."""
+    return re.sub(r'^\d+[\).\s]*', '', text).strip()
 
 def change_tone(summaries, tone="comedy"):
     """
@@ -34,6 +39,9 @@ def change_tone(summaries, tone="comedy"):
             if len(modified_summaries) != len(summaries):
                 logging.warning("Mismatch in modified summaries count. Returning original summaries.")
                 return summaries  # Fallback to original summaries if API response is incomplete
+
+            # Remove leading numbers from the response
+            modified_summaries = [remove_leading_numbers(summary) for summary in modified_summaries]
 
             return modified_summaries
 
